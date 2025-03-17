@@ -5,7 +5,7 @@ def query():
 
 	client = InferenceClient(
 		provider="hyperbolic",
-		api_key="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"
+		api_key="xxxx"
 	)
 
 	messages = [
