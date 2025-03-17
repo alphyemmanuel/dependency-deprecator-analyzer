@@ -27,6 +27,7 @@ def query():
 	for chunk in stream:
 		print(chunk.choices[0].delta.content, end="")
 		message.append(chunk.choices[0].delta.content)
-	return message
+	print(message)
+	return True
 
 query()
