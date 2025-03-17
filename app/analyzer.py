@@ -4,7 +4,8 @@ from huggingface_hub import InferenceClient
 def query():
 
 	client = InferenceClient(
-		provider="hyperbolic"
+		provider="hyperbolic",
+		api_key="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"
 	)
 
 	messages = [
