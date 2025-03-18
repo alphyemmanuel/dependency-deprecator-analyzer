@@ -18,7 +18,7 @@ def query():
 
     client = InferenceClient(
 		provider="hyperbolic",
-		api_key="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"
+		api_key=os.getenv("HUGGINGFACE_TOKEN")
 	)
 
 	# messages = [
@@ -78,13 +78,14 @@ def query():
 
 def post_commit_comment(commit_sha):
     # GitHub repository details
-    GITHUB_TOKEN = "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"  # Use GitHub Actions Secret or manually set
-    REPO_OWNER = "alphyemmanuel"  # Change to your GitHub username or org
+    GITHUB_TOKEN = os.getenv("GIT_TOKEN")  # Use GitHub Actions Secret or manually set
+    REPO_OWNER = os.getenv("REPO_OWNER")  # Change to your GitHub username or org
     REPO_NAME = "node-dependency-deprecator-analyzer-sample-project"  # Change to your repository name
     COMMENT_BODY = "🚀 This is an automated comment! Deprecated libraries detected."
     """ Posts a comment on a specific commit """
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/commits/{commit_sha}/comments"
     headers = {
+
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json",
         'X-GitHub-Api-Version': '2022-11-28'
