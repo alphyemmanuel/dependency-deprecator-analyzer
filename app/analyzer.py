@@ -2,10 +2,11 @@ from flask import Flask, request, jsonify
 from huggingface_hub import InferenceClient
 import json
 import os
+import sys
 
 def query():
     COMMIT_SHA = os.getenv("COMMIT_ID")
-    print("COMMIT_SHA >>>", COMMIT_SHA)
+    print("COMMIT_SHA >>>", COMMIT_SHA, sys.argv[1])
     file_path = "./cloned_repo/package.json"
 
     with open(file_path, "r") as file:
