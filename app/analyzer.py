@@ -6,7 +6,8 @@ import requests
 
 def query():
     COMMIT_SHA = os.getenv("COMMIT_ID")
-    print("COMMIT_SHA >>>", COMMIT_SHA)
+    HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+    print("COMMIT_SHA >>>", COMMIT_SHA, HUGGINGFACE_TOKEN)
     file_path = "./cloned_repo/package.json"
 
     with open(file_path, "r") as file:
@@ -18,7 +19,7 @@ def query():
 
     client = InferenceClient(
 		provider="hyperbolic",
-		api_key=os.getenv("HUGGINGFACE_TOKEN")
+		api_key=HUGGINGFACE_TOKEN
 	)
 
 	# messages = [
@@ -80,6 +81,7 @@ def post_commit_comment(commit_sha):
     # GitHub repository details
     GITHUB_TOKEN = os.getenv("GIT_TOKEN")  # Use GitHub Actions Secret or manually set
     REPO_OWNER = os.getenv("REPO_OWNER")  # Change to your GitHub username or org
+    print(GITHUB_TOKEN, REPO_OWNER)
     REPO_NAME = "node-dependency-deprecator-analyzer-sample-project"  # Change to your repository name
     COMMENT_BODY = "🚀 This is an automated comment! Deprecated libraries detected."
     """ Posts a comment on a specific commit """
