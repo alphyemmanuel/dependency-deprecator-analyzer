@@ -2,11 +2,11 @@ from flask import Flask, request, jsonify
 from huggingface_hub import InferenceClient
 import json
 import os
-import sys
+import requests
 
 def query():
     COMMIT_SHA = os.getenv("COMMIT_ID")
-    print("COMMIT_SHA >>>", COMMIT_SHA, sys.argv[1])
+    print("COMMIT_SHA >>>", COMMIT_SHA)
     file_path = "./cloned_repo/package.json"
 
     with open(file_path, "r") as file:
@@ -71,6 +71,33 @@ def query():
     # print("***************")
     # print(deprecated)
     # print(alternative)
+    post_commit_comment(COMMIT_SHA)
+
+    return True
+
+
+def post_commit_comment(commit_sha):
+    # GitHub repository details
+    GITHUB_TOKEN = "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"  # Use GitHub Actions Secret or manually set
+    REPO_OWNER = "alphyemmanuel"  # Change to your GitHub username or org
+    REPO_NAME = "node-dependency-deprecator-analyzer-sample-project"  # Change to your repository name
+    COMMENT_BODY = "🚀 This is an automated comment! Deprecated libraries detected."
+    """ Posts a comment on a specific commit """
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/commits/{commit_sha}/comments"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    data = {"body": COMMENT_BODY}
+    
+    response = requests.post(url, headers=headers, json=data)
+    
+    if response.status_code == 201:
+        print("✅ Comment posted successfully!")
+        print(response.json())  # Print response for debugging
+    else:
+        print(f"❌ Failed to post comment: {response.status_code}, {response.text}")
+
     return True
 
 query()
