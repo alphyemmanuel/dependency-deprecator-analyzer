@@ -78,7 +78,7 @@ def query():
 
 def post_commit_comment(commit_sha):
     # GitHub repository details
-    GITHUB_TOKEN = "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"  # Use GitHub Actions Secret or manually set
+    GITHUB_TOKEN = "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"  # Use GitHub Actions Secret or manually set
     REPO_OWNER = "alphyemmanuel"  # Change to your GitHub username or org
     REPO_NAME = "node-dependency-deprecator-analyzer-sample-project"  # Change to your repository name
     COMMENT_BODY = "🚀 This is an automated comment! Deprecated libraries detected."
