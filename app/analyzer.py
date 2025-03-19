@@ -49,15 +49,12 @@ def query():
     deprecatedLibComments = []
     deprecatedLibObject = {}
     for line in ai_response.split("\n"):
-        print("Line here above: ", line)
         if "Deprecated:" in line and "-> Use:" in line and "-> Reason:" in line:
-            print("Line here: ", line)
             deprecatedLibComments.append(line)
             deprecated, alternative = line.split("-> Use:")
-            deprecatedLibObject[deprecated] = alternative.split("-> Reason:")[0]
+            deprecatedLibObject[deprecated.replace("Deprecated:","")] = alternative.split("-> Reason:")[0].split(",")
             print(deprecatedLibObject)
             print("*****************")
-            # print(alternative)
     print("deprecatedLibObject >>>",deprecatedLibObject, deprecatedLibComments)
     github_util.post_commit_comment(COMMIT_SHA,"\n".join(deprecatedLibComments))
     # return {deprecated, alternative}
