@@ -14,51 +14,56 @@ def startAnalyzer():
     # scannedFileResponse = scan_files()
 
 def query():
-    COMMIT_SHA = os.getenv("COMMIT_ID")
-    file_path = "./cloned_repo/package.json"
-    with open(file_path, "r") as file:
-        package_data = json.load(file)
+    try:
+        COMMIT_SHA = os.getenv("COMMIT_ID")
+        file_path = "./cloned_repo/package.json"
+        with open(file_path, "r") as file:
+            package_data = json.load(file)
 
-    dependencies = package_data.get("dependencies", {})
-    package_list = "\n".join(dependencies.keys())
-    messages = [
-    {
-        "role": "user",
-        "content": f"Identify deprecated npm libraries from this list:\n{package_list}\n"
-                   "If deprecated, suggest alternatives in the format:\n"
-                   "'Deprecated: <lib_name> -> Use: <alternative> -> Reason: <reason>'"
-    }
-    ]
+        dependencies = package_data.get("dependencies", {})
+        package_list = "\n".join(dependencies.keys())
+        messages = [
+        {
+            "role": "user",
+            "content": f"Identify deprecated npm libraries from this list:\n{package_list}\n"
+                    "If deprecated, suggest alternatives in the format:\n"
+                    "'Deprecated: <lib_name> -> Use: <alternative> -> Reason: <reason>'"
+        }
+        ]
 
-    HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
-    client = InferenceClient(
-		provider="hyperbolic",
-		api_key=HUGGINGFACE_TOKEN
-	)
+        HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+        client = InferenceClient(
+            provider="hyperbolic",
+            api_key=HUGGINGFACE_TOKEN
+        )
 
-    response = client.chat.completions.create(
-		model="deepseek-ai/DeepSeek-R1", 
-		messages=messages, 
-		temperature=0.5,
-		max_tokens=2048,
-		top_p=0.7,
-		# stream=True
-	)
-    ai_response = response.choices[0].message["content"]
-    # print("ai_response >>>",ai_response)
-    deprecatedLibComments = []
-    deprecatedLibObject = {}
-    for line in ai_response.split("\n"):
-        if "Deprecated:" in line and "-> Use:" in line and "-> Reason:" in line:
-            deprecatedLibComments.append(line)
-            deprecated, alternative = line.split("-> Use:")
-            deprecatedLibObject[deprecated.replace("Deprecated:","")] = alternative.split("-> Reason:")[0].split(",")
-            print(deprecatedLibObject)
-            print("*****************")
-    print("deprecatedLibObject >>>",deprecatedLibObject, deprecatedLibComments)
-    github_util.post_commit_comment(COMMIT_SHA,"\n".join(deprecatedLibComments))
-    # return {deprecated, alternative}
-    return deprecatedLibObject
+        response = client.chat.completions.create(
+            model="deepseek-ai/DeepSeek-R1", 
+            messages=messages, 
+            temperature=0.5,
+            max_tokens=2048,
+            top_p=0.7,
+            # stream=True
+        )
+        ai_response = response.choices[0].message["content"]
+        # print("ai_response >>>",ai_response)
+        deprecatedLibComments = []
+        deprecatedLibObject = {}
+        for line in ai_response.split("\n"):
+            if "Deprecated:" in line and "-> Use:" in line and "-> Reason:" in line:
+                deprecatedLibComments.append(line)
+                deprecated, alternative = line.split("-> Use:")
+                deprecatedLibObject[deprecated.replace("Deprecated:","")] = alternative.split("-> Reason:")[0].split(",")
+                print(deprecatedLibObject)
+                print("*****************")
+        print("deprecatedLibObject >>>",deprecatedLibObject, deprecatedLibComments)
+        github_util.post_commit_comment(COMMIT_SHA,"\n".join(deprecatedLibComments))
+        # return {deprecated, alternative}
+        return deprecatedLibObject
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
 
 
 # def scan_files(directory):
@@ -97,5 +102,4 @@ def query():
 #     print("No files using moment were found.")
 # print("*****",messages)
 
-# query()
 startAnalyzer()
