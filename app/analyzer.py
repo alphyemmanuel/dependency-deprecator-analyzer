@@ -33,6 +33,7 @@ def query():
 
     response = deepseek_util.runQuery(messages)
     ai_response = response.choices[0].message["content"]
+    print("ai_response >>>",ai_response)
     deprecatedLibComments = []
     deprecatedLibObject = {}
     for line in ai_response.split("\n"):
@@ -46,7 +47,8 @@ def query():
             # print(alternative)
     print("deprecatedLibObject >>>",deprecatedLibObject)
     github_util.post_commit_comment(COMMIT_SHA,deprecatedLibComments)
-    return {deprecated, alternative}
+    # return {deprecated, alternative}
+    return deprecatedLibObject
 
 
 # def scan_files(directory):
