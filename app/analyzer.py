@@ -21,7 +21,6 @@ def query():
 
     dependencies = package_data.get("dependencies", {})
     package_list = "\n".join(dependencies.keys())
-
     messages = [
     {
         "role": "user",
@@ -31,9 +30,22 @@ def query():
     }
     ]
 
-    response = deepseek_util.runQuery(messages)
+    HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+    client = InferenceClient(
+		provider="hyperbolic",
+		api_key=HUGGINGFACE_TOKEN
+	)
+
+    response = client.chat.completions.create(
+		model="deepseek-ai/DeepSeek-R1", 
+		messages=messages, 
+		temperature=0.5,
+		max_tokens=2048,
+		top_p=0.7,
+		# stream=True
+	)
     ai_response = response.choices[0].message["content"]
-    print("ai_response >>>",ai_response)
+    # print("ai_response >>>",ai_response)
     deprecatedLibComments = []
     deprecatedLibObject = {}
     for line in ai_response.split("\n"):
@@ -42,11 +54,11 @@ def query():
             deprecatedLibComments.append(line)
             deprecated, alternative = line.split("-> Use:")
             deprecatedLibObject[deprecated] = alternative.split("-> Reason:")[0]
-            # print(deprecated)
-            # print("*****************")
+            print(deprecatedLibObject)
+            print("*****************")
             # print(alternative)
     print("deprecatedLibObject >>>",deprecatedLibObject)
-    github_util.post_commit_comment(COMMIT_SHA,deprecatedLibComments)
+    github_util.post_commit_comment(COMMIT_SHA,"\n".join(deprecatedLibComments))
     # return {deprecated, alternative}
     return deprecatedLibObject
 
