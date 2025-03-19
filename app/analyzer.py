@@ -26,7 +26,7 @@ def query():
         "role": "user",
         "content": f"Identify deprecated npm libraries from this list:\n{package_list}\n"
                    "If deprecated, suggest alternatives in the format:\n"
-                   "'Deprecated: <lib_name> -> Use: <alternative>' -> Reason: <reason>"
+                   "'Deprecated: <lib_name> -> Use: <alternative> -> Reason: <reason>'"
     }
     ]
 
@@ -49,8 +49,8 @@ def query():
     deprecatedLibComments = []
     deprecatedLibObject = {}
     for line in ai_response.split("\n"):
-        print("Line here: ", line)
-        if "Deprecated:" in line and "-> Use:" in line:
+        print("Line here above: ", line)
+        if "Deprecated:" in line and "-> Use:" in line and "-> Reason:" in line:
             print("Line here: ", line)
             deprecatedLibComments.append(line)
             deprecated, alternative = line.split("-> Use:")
@@ -58,7 +58,7 @@ def query():
             print(deprecatedLibObject)
             print("*****************")
             # print(alternative)
-    print("deprecatedLibObject >>>",deprecatedLibObject)
+    print("deprecatedLibObject >>>",deprecatedLibObject, deprecatedLibComments)
     github_util.post_commit_comment(COMMIT_SHA,"\n".join(deprecatedLibComments))
     # return {deprecated, alternative}
     return deprecatedLibObject
