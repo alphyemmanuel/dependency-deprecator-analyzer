@@ -49,7 +49,8 @@ def query():
     deprecatedLibComments = []
     deprecatedLibObject = {}
     for line in ai_response.split("\n"):
-        if "Deprecated:" in line and "-> Use:" in line and "-> Reason:" in line:
+        print("Line here: ", line)
+        if "Deprecated:" in line and "-> Use:" in line:
             print("Line here: ", line)
             deprecatedLibComments.append(line)
             deprecated, alternative = line.split("-> Use:")
