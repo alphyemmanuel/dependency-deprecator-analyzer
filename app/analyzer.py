@@ -9,9 +9,9 @@ import github_util
 
 def startAnalyzer():
     deprecated_libs = query()
-    print("deprecated_libs >>>",deprecated_libs)
-    return
-    # scannedFileResponse = scan_files()
+    if deprecated_libs:
+        modified_files = scan_and_refactor_files("./cloned_repo", deprecated_libs)
+        post_github_comment(deprecated_libs, modified_files)
 
 def query():
     try:
@@ -23,83 +23,101 @@ def query():
         dependencies = package_data.get("dependencies", {})
         package_list = "\n".join(dependencies.keys())
         messages = [
-        {
-            "role": "user",
-            "content": f"Identify deprecated npm libraries from this list:\n{package_list}\n"
-                    "If deprecated, suggest alternatives in the format:\n"
-                    "'Deprecated: <lib_name> -> Use: <alternative> -> Reason: <reason>'"
-        }
+            {
+                "role": "user",
+                "content": f"Identify deprecated npm libraries from this list:\n{package_list}\n"
+                           "If deprecated, suggest alternatives in the format:\n"
+                           "'Deprecated: <lib_name> -> Use: <alternative1>, <alternative2> -> Reason: <reason>'"
+            }
         ]
 
         HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
-        client = InferenceClient(
-            provider="hyperbolic",
-            api_key=HUGGINGFACE_TOKEN
-        )
-
+        client = InferenceClient(provider="hyperbolic", api_key=HUGGINGFACE_TOKEN)
         response = client.chat.completions.create(
             model="deepseek-ai/DeepSeek-R1", 
             messages=messages, 
             temperature=0.5,
             max_tokens=2048,
             top_p=0.7,
-            # stream=True
         )
-        ai_response = response.choices[0].message["content"]
-        # print("ai_response >>>",ai_response)
-        deprecatedLibComments = []
+        ai_response = response.choices[0].message.get("content", "")
+        
         deprecatedLibObject = {}
-        for line in ai_response.split("\n"):
-            if "Deprecated:" in line and "-> Use:" in line and "-> Reason:" in line:
-                deprecatedLibComments.append(line)
-                deprecated, alternative = line.split("-> Use:")
-                deprecatedLibObject[deprecated.replace("Deprecated:","")] = alternative.split("-> Reason:")[0].split(",")
-                print(deprecatedLibObject)
-                print("*****************")
-        print("deprecatedLibObject >>>",deprecatedLibObject, deprecatedLibComments)
-        github_util.post_commit_comment(COMMIT_SHA,"\n".join(deprecatedLibComments))
-        # return {deprecated, alternative}
+        for match in re.finditer(r"Deprecated: (.*?) -> Use: (.*?) -> Reason: (.*?)", ai_response):
+            lib_name, alternatives, reason = match.groups()
+            alternative_list = [alt.strip() for alt in alternatives.split(",")]
+            deprecatedLibObject[lib_name.strip()] = {
+                "alternatives": alternative_list,
+                "reason": reason.strip()
+            }
+
+        print("deprecatedLibObject >>>", deprecatedLibObject)
         return deprecatedLibObject
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        return {}
 
+def scan_and_refactor_files(directory, deprecated_libs):
+    modified_files = {}
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith(('.js', '.ts')):
+                file_path = os.path.join(root, file)
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        for lib, details in deprecated_libs.items():
+                            if re.search(rf'\b{lib}\b', content):
+                                chosen_alternative = details["alternatives"][0]  # Pick first alternative
+                                refactored_content = generate_refactored_code(content, lib, chosen_alternative)
+                                with open(file_path, 'w', encoding='utf-8') as wf:
+                                    wf.write(refactored_content)
+                                modified_files[file_path] = {
+                                    "deprecated": lib,
+                                    "alternative": chosen_alternative,
+                                    "updated_content": refactored_content
+                                }
+                except Exception as e:
+                    print(f"Error reading {file_path}: {e}")
+    return modified_files
 
-
-
-# def scan_files(directory):
-#     moment_files = []
-#     for root, _, files in os.walk(directory):
-#         for file in files:
-#             if file.endswith(('.js', '.ts')):
-#                 file_path = os.path.join(root, file)
-#                 try:
-#                     with open(file_path, 'r', encoding='utf-8') as f:
-#                         content = f.read()
-#                         if re.search(r'\bmoment\b', content):
-#                             moment_files.append(file_path)
-#                 except Exception as e:
-#                     print(f"Error reading {file_path}: {e}")
+def generate_refactored_code(content, deprecated_lib, alternative_lib):
+    messages = [
+        {
+            "role": "user",
+            "content": f"Refactor the following JavaScript/TypeScript code by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide the refactored implementation.\n\n" + content
+        }
+    ]
     
-#     return moment_files
+    HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+    client = InferenceClient(provider="hyperbolic", api_key=HUGGINGFACE_TOKEN)
+    response = client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-R1", 
+        messages=messages, 
+        temperature=0.5,
+        max_tokens=2048,
+        top_p=0.7,
+    )
+    return response.choices[0].message.get("content", content)
 
-# project_folder = "./cloned_repo"
-# moment_files = scan_files(project_folder)
-# print(moment_files)
-# messages = []
-# if moment_files:
-#     print("Files using moment:")
-#     for file in moment_files:
-#         print(f"- {file}")
-#         with open(file, 'r', encoding='utf-8') as f:
-#             # print(f.read())  # Print file content
-#             print("-" * 50)
-#             contents = f.read()
-#             messages.append({
-#         "role": "user",
-#         "content": f"{contents} send the corresponding code using dayjs"
-#     })
-# else:
-#     print("No files using moment were found.")
-# print("*****",messages)
+def post_github_comment(deprecated_libs, modified_files):
+    COMMIT_SHA = os.getenv("COMMIT_ID")
+    comment_body = "## Deprecated Libraries Found and Refactored\n\n"
+    
+    for lib, details in deprecated_libs.items():
+        comment_body += (f"### Deprecated: `{lib}`\n"
+                         f"- **Use:** {', '.join(details['alternatives'])}\n"
+                         f"- **Reason:** {details['reason']}\n\n")
+    
+    if modified_files:
+        comment_body += "## Code Refactoring Applied\n\n"
+        for file, data in modified_files.items():
+            comment_body += (f"### File: `{file}`\n"
+                             f"```diff\n"
+                             f"- {data['deprecated']}\n"
+                             f"+ {data['alternative']}\n"
+                             f"```\n\n")
+    
+    github_util.post_commit_comment(COMMIT_SHA, comment_body)
 
 startAnalyzer()
