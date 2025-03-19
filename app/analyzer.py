@@ -43,13 +43,13 @@ def query():
         ai_response = response.choices[0].message.get("content", "")
         
         deprecatedLibObject = {}
-        for match in re.finditer(r"Deprecated: (.*?) -> Use: (.*?) -> Reason: (.*?)", ai_response):
-            print("match >>>", match)
+        for match in re.finditer(r"Deprecated:\s*(.*?)\s*->\s*Use:\s*(.*?)\s*->\s*Reason:\s*(.*)", ai_response):
             lib_name, alternatives, reason = match.groups()
+            print(f"Extracted - Library: {lib_name}, Alternatives: {alternatives}, Reason: {reason}")  # Debugging
             alternative_list = [alt.strip() for alt in alternatives.split(",")]
             deprecatedLibObject[lib_name.strip()] = {
                 "alternatives": alternative_list,
-                "reason": reason
+                "reason": reason.strip()
             }
 
         print("deprecatedLibObject >>>", deprecatedLibObject)
@@ -71,8 +71,6 @@ def scan_and_refactor_files(directory, deprecated_libs):
                             if re.search(rf'\b{lib}\b', content):
                                 chosen_alternative = details["alternatives"][0]  # Pick first alternative
                                 refactored_content = generate_refactored_code(content, lib, chosen_alternative)
-                                # with open(file_path, 'w', encoding='utf-8') as wf:
-                                #     wf.write(refactored_content)
                                 modified_files[file_path] = {
                                     "deprecated": lib,
                                     "alternative": chosen_alternative,
@@ -86,7 +84,7 @@ def generate_refactored_code(content, deprecated_lib, alternative_lib):
     messages = [
         {
             "role": "user",
-            "content": f"Refactor the following JavaScript/TypeScript code by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide the refactored implementation.\n\n" + content
+            "content": f"Refactor the following JavaScript/TypeScript code by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide the full refactored implementation with necessary imports and correct function replacements.\n\n" + content
         }
     ]
     
@@ -112,13 +110,12 @@ def post_github_comment(deprecated_libs, modified_files):
                          f"- **Reason:** {details['reason']}\n\n")
     
     if modified_files:
-        comment_body += "## Code Refactoring Applied\n\n"
+        comment_body += "## Code Refactoring Suggestions\n\n"
         for file, data in modified_files.items():
             comment_body += (f"### File: `{file}`\n"
-                             f"```diff\n"
-                             f"- {data['deprecated']}\n"
-                             f"+ {data['alternative']}\n"
-                             f"```\n\n")
+                             f"```js\n"
+                             f"{data['updated_content']}\n"
+                             f"```")
     
     github_util.post_commit_comment(COMMIT_SHA, comment_body)
 
