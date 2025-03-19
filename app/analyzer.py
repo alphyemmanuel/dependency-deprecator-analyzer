@@ -44,11 +44,12 @@ def query():
         
         deprecatedLibObject = {}
         for match in re.finditer(r"Deprecated: (.*?) -> Use: (.*?) -> Reason: (.*?)", ai_response):
+            print("match >>>", match)
             lib_name, alternatives, reason = match.groups()
             alternative_list = [alt.strip() for alt in alternatives.split(",")]
             deprecatedLibObject[lib_name.strip()] = {
                 "alternatives": alternative_list,
-                "reason": reason.strip()
+                "reason": reason
             }
 
         print("deprecatedLibObject >>>", deprecatedLibObject)
@@ -70,8 +71,8 @@ def scan_and_refactor_files(directory, deprecated_libs):
                             if re.search(rf'\b{lib}\b', content):
                                 chosen_alternative = details["alternatives"][0]  # Pick first alternative
                                 refactored_content = generate_refactored_code(content, lib, chosen_alternative)
-                                with open(file_path, 'w', encoding='utf-8') as wf:
-                                    wf.write(refactored_content)
+                                # with open(file_path, 'w', encoding='utf-8') as wf:
+                                #     wf.write(refactored_content)
                                 modified_files[file_path] = {
                                     "deprecated": lib,
                                     "alternative": chosen_alternative,
@@ -98,6 +99,7 @@ def generate_refactored_code(content, deprecated_lib, alternative_lib):
         max_tokens=2048,
         top_p=0.7,
     )
+    print("codeSnippet >>>", response.choices[0].message.get("content", content))
     return response.choices[0].message.get("content", content)
 
 def post_github_comment(deprecated_libs, modified_files):
