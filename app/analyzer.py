@@ -97,7 +97,6 @@ def generate_refactored_code(content, deprecated_lib, alternative_lib):
         max_tokens=2048,
         top_p=0.7,
     )
-    print("codeSnippet >>>", response.choices[0].message.get("content", content))
     return response.choices[0].message.get("content", content)
 
 def post_github_comment(deprecated_libs, modified_files):
@@ -105,17 +104,24 @@ def post_github_comment(deprecated_libs, modified_files):
     comment_body = "## Deprecated Libraries Found and Refactored\n\n"
     
     for lib, details in deprecated_libs.items():
-        comment_body += (f"### Deprecated: `{lib}`\n"
+        comment_body += (f"### `{lib}`\n"
                          f"- **Use:** {', '.join(details['alternatives'])}\n"
                          f"- **Reason:** {details['reason']}\n\n")
     
     if modified_files:
         comment_body += "## Code Refactoring Suggestions\n\n"
         for file, data in modified_files.items():
-            comment_body += (f"### File: `{file}`\n"
+            comment_body += (f"### `{file}`\n"
+                             f"#### Before\n"
                              f"```js\n"
+                             f"// Uses {data['deprecated']}\n"
+                             f"...\n"
+                             f"```\n"
+                             f"#### After\n"
+                             f"```js\n"
+                             f"// Updated to use {data['alternative']}\n"
                              f"{data['updated_content']}\n"
-                             f"```")
+                             f"```\n")
     
     github_util.post_commit_comment(COMMIT_SHA, comment_body)
 
