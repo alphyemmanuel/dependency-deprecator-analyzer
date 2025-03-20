@@ -68,7 +68,8 @@ def scan_and_refactor_files(directory, deprecated_libs):
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
                         for lib, details in deprecated_libs.items():
-                            if re.search(rf'\b{lib}\b', content):
+                            escaped_lib = re.escape(lib)  # Escape special characters in lib
+                            if re.search(rf'\b{escaped_lib}\b', content):
                                 chosen_alternative = details["alternatives"][0]  # Pick first alternative
                                 refactored_content = generate_refactored_code(content, lib, chosen_alternative)
                                 modified_files[file_path] = {
@@ -101,7 +102,7 @@ def generate_refactored_code(content, deprecated_lib, alternative_lib):
 
 def post_github_comment(deprecated_libs, modified_files):
     COMMIT_SHA = os.getenv("COMMIT_ID")
-    comment_body = "## Deprecated Libraries Found and Refactored\n\n"
+    comment_body = ""
     
     for lib, details in deprecated_libs.items():
         comment_body += (f"### `{lib}`\n"
