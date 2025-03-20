@@ -52,7 +52,6 @@ def query():
                 "reason": reason.strip()
             }
 
-        print("deprecatedLibObject >>>", deprecatedLibObject)
         return deprecatedLibObject
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
@@ -85,7 +84,7 @@ def generate_refactored_code(content, deprecated_lib, alternative_lib):
     messages = [
         {
             "role": "user",
-            "content": f"Refactor the following JavaScript/TypeScript code by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide the full refactored implementation with necessary imports and correct function replacements.\n\n" + content
+            "content": f"Refactor the following JavaScript/TypeScript code by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide only the final refactored implementation.\n\n" + content
         }
     ]
     
@@ -120,7 +119,6 @@ def post_github_comment(deprecated_libs, modified_files):
                              f"```\n"
                              f"#### After\n"
                              f"```js\n"
-                             f"// Updated to use {data['alternative']}\n"
                              f"{data['updated_content']}\n"
                              f"```\n")
     
