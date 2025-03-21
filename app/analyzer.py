@@ -58,7 +58,6 @@ def query():
 
 def scan_and_refactor_files(directory, deprecated_libs):
     modified_files = {}
-    messages = []
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(('.js', '.ts')):
@@ -72,32 +71,25 @@ def scan_and_refactor_files(directory, deprecated_libs):
                             escaped_lib = re.escape(lib)  # Escape special characters in lib
                             if re.search(rf'\b{escaped_lib}\b', content):
                                 chosen_alternative = details["alternatives"][0]  # Pick first alternative
-                                messages.append({
-            "role": "user",
-            "content": f"Refactor the following JavaScript/TypeScript code '{content}' by replacing '{lib}' with '{chosen_alternative}'. Provide only the final refactored implementation in the format of:\n"
-                       "'Original Function is: <original_code> ->  <alternative_lib_name> Definition: <alternative_lib_definition> -> Refactored Code: <refactored_code>'.\n\n"
-        })
-                                # refactored_content = generate_refactored_code(content, lib, chosen_alternative)
-                                # print("Refactored content >>>",refactored_content)
-                                # modified_files[file_path] = {
-                                #     "deprecated": lib,
-                                #     "alternative": chosen_alternative,
-                                #     "updated_content": refactored_content
-                                # }
+                                refactored_content = generate_refactored_code(content, lib, chosen_alternative)
+                                print("Refactored content >>>",refactored_content)
+                                modified_files[file_path] = {
+                                    "deprecated": lib,
+                                    "alternative": chosen_alternative,
+                                    "updated_content": refactored_content
+                                }
                 except Exception as e:
                     print(f"Error reading {file_path}: {e}")
-    result = generate_refactored_code(messages)
     return modified_files
 
-def generate_refactored_code(messages):
-# def generate_refactored_code(content, deprecated_lib, alternative_lib):
-    # messages = [
-    #     {
-    #         "role": "user",
-    #         "content": f"Refactor the following JavaScript/TypeScript code '{content}' by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide only the final refactored implementation in the format of:\n"
-    #                    "'Original Function is: <original_code> ->  <alternative_lib_name> Definition: <alternative_lib_definition> -> Refactored Code: <refactored_code>'.\n\n"
-    #     }
-    # ]
+def generate_refactored_code(content, deprecated_lib, alternative_lib):
+    messages = [
+        {
+            "role": "user",
+            "content": f"Refactor the following JavaScript/TypeScript code '{content}' by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide only the final refactored implementation in the format of:\n"
+                       "'Original Function is: <original_code> ->  <alternative_lib_name> Definition: <alternative_lib_definition> -> Refactored Code: <refactored_code>'.\n\n"
+        }
+    ]
     print("Message :",messages)
     HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
     client = InferenceClient(provider="hyperbolic", api_key=HUGGINGFACE_TOKEN)
