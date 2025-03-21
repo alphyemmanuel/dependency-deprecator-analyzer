@@ -86,7 +86,7 @@ def scan_and_refactor_files(directory, deprecated_libs):
                                 # }
                 except Exception as e:
                     print(f"Error reading {file_path}: {e}")
-        result = generate_refactored_code(messages)
+    result = generate_refactored_code(messages)
     return modified_files
 
 def generate_refactored_code(messages):
