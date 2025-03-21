@@ -61,11 +61,13 @@ def scan_and_refactor_files(directory, deprecated_libs):
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(('.js', '.ts')):
+                print("File >>>", file)
                 file_path = os.path.join(root, file)
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
                         for lib, details in deprecated_libs.items():
+                            print("lib, details >>>", lib, details)
                             escaped_lib = re.escape(lib)  # Escape special characters in lib
                             if re.search(rf'\b{escaped_lib}\b', content):
                                 chosen_alternative = details["alternatives"][0]  # Pick first alternative
