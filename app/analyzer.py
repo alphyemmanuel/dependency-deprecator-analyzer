@@ -86,8 +86,9 @@ def generate_refactored_code(content, deprecated_lib, alternative_lib):
     messages = [
         {
             "role": "user",
-            "content": f"Refactor the following JavaScript/TypeScript code '{content}' by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide only the final refactored implementation in the format of:\n"
-                       "'Original Function is: <original_code> ->  <alternative_lib_name> Definition: <alternative_lib_definition> -> Refactored Code: <refactored_code>'.\n\n"
+            "content": f"Refactor the following JavaScript code {content} to use '{alternative_lib}' instead of '{deprecated_lib}'"
+            # "content": f"Refactor the following JavaScript/TypeScript code '{content}' by replacing '{deprecated_lib}' with '{alternative_lib}'. Provide only the final refactored implementation in the format of:\n"
+            #            "'Original Function is: <original_code> ->  <alternative_lib_name> Definition: <alternative_lib_definition> -> Refactored Code: <refactored_code>'.\n\n"
         }
     ]
     print("Message :",messages)
