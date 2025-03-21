@@ -70,6 +70,7 @@ def scan_and_refactor_files(directory, deprecated_libs):
                             if re.search(rf'\b{escaped_lib}\b', content):
                                 chosen_alternative = details["alternatives"][0]  # Pick first alternative
                                 refactored_content = generate_refactored_code(content, lib, chosen_alternative)
+                                print("Refactored content >>>",refactored_content)
                                 modified_files[file_path] = {
                                     "deprecated": lib,
                                     "alternative": chosen_alternative,
@@ -97,6 +98,7 @@ def generate_refactored_code(content, deprecated_lib, alternative_lib):
         max_tokens=2048,
         top_p=0.7,
     )
+    print("AI Response >>>", response.choices[0].message.get("content", content))
     return response.choices[0].message.get("content", content)
 
 def extract_refactoring_details(response_text):
@@ -153,7 +155,6 @@ def post_github_comment(deprecated_libs, modified_files):
                          f"- **Reason:** {details['reason']}\n\n")
 
     if modified_files:
-        comment_body += "## Code Refactoring Suggestions\n\n"
         for file, data in modified_files.items():
             extracted_details = extract_refactoring_details(data["updated_content"])
             formatted_comment = format_code_refactoring_comment(extracted_details)
